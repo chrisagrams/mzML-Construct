@@ -1,20 +1,9 @@
 from lxml import etree
 from tqdm import tqdm
-import pandas as pd
 import numpy as np
 from utils.mzml_utils import *
-from utils.binary_utils import encode_binary, import_from_binary
-
-
-def import_from_parquet(parquet_file):
-    df = pd.read_parquet(parquet_file)
-
-    consolidated_df = df.groupby(['spec_no', 'ret_time', 'ms_level']).agg({
-        'mz': list,
-        'int': list
-    }).reset_index()
-
-    return consolidated_df
+from utils.binary_utils import encode_binary
+from utils.file_utils import import_from_binary, import_from_parquet
 
 
 if __name__ == "__main__":

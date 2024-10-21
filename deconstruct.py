@@ -1,30 +1,8 @@
-import pyarrow as pa
-import pyarrow.parquet as pq
 from tqdm import tqdm
 from lxml import etree
 from utils.mzml_utils import *
-from utils.binary_utils import decode_binary, export_to_binary
-
-
-def export_to_parquet(records, output_path, compression=None):
-    schema = pa.schema([
-        ('spec_no', pa.int32()),
-        ('ret_time', pa.float64()),
-        ('mz', pa.float64()),
-        ('int', pa.float64()),
-        ('ms_level', pa.int32()),
-    ])
-
-    spec_nos, ret_times, mzs, intensities, ms_levels = zip(*records)
-    table = pa.Table.from_pydict({
-        'spec_no': spec_nos,
-        'ret_time': ret_times,
-        'mz': mzs,
-        'int': intensities,
-        'ms_level': ms_levels,
-    }, schema=schema)
-
-    pq.write_table(table, output_path, compression=compression)
+from utils.binary_utils import decode_binary
+from utils.file_utils import export_to_parquet, export_to_binary
 
 
 if __name__ == "__main__":
