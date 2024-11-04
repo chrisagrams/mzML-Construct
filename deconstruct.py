@@ -8,17 +8,13 @@ from utils.file_utils import export_to_parquet, export_to_binary, export_to_npy
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Split an mzML file to XML and binary/parquet file formats")
+    parser = argparse.ArgumentParser(description="Split an mzML file to XML and binary/parquet/NPY file formats")
     parser.add_argument("input", help="Path to the input mzML file")
     parser.add_argument("output_dir", help="Path to the output directory")
     parser.add_argument("-x", "--output_xml",
                         help="Path to the output XML file (default: output directory with input file name and .xml extension)")
-    parser.add_argument("-p", "--output_parquet",
-                        help="Path to the output Parquet file (default: output directory with input file name and .parquet extension)")
-    parser.add_argument("-b", "--output_binary",
-                        help="Path to the output binary file (default: output directory with input file name and .bin extension)")
-    parser.add_argument("-n", "--output_npy",
-                        help="Path to the output NPY file (default: output directory with input file name and .npy extension)")
+    parser.add_argument("-f", "--format", choices=["parquet", "bin", "npy"], required=True,
+                        help="Binary format to export to (parquet, bin, npy)")
     return parser.parse_args()
 
 
@@ -27,16 +23,18 @@ def change_extension(filepath, new_ext, output_dir):
     name, _ = os.path.splitext(filename)
     return os.path.join(output_dir, name + new_ext)
 
-
 if __name__ == "__main__":
     args = parse_arguments()
     source = args.input
     output_dir = args.output_dir
 
     output_xml = args.output_xml or change_extension(source, '.xml', output_dir)
-    output_parquet = args.output_parquet or change_extension(source, '.parquet', output_dir)
-    output_binary = args.output_binary or change_extension(source, '.bin', output_dir)
-    output_npy = args.output_npy or change_extension(source, '.npy', output_dir)
+    if args.format == "parquet":
+        output_binary = change_extension(source, '.parquet', output_dir)
+    elif args.format == "bin":
+        output_binary = change_extension(source, '.bin', output_dir)
+    elif args.format == "npy":
+        output_binary = change_extension(source, '.npy', output_dir)
 
     tree = etree.parse(source)
     root = tree.getroot()
@@ -73,9 +71,9 @@ if __name__ == "__main__":
 
     tree.write(output_xml)
 
-    if output_parquet:
-        export_to_parquet(records, output_parquet)
-    if output_binary:
+    if args.format == "parquet":
+        export_to_parquet(records, output_binary)
+    elif args.format == "bin":
         export_to_binary(records, output_binary)
-    if output_npy:
-        export_to_npy(records, output_npy)
+    elif args.format == "npy":
+        export_to_npy(records, output_binary)
