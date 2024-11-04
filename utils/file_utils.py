@@ -6,13 +6,17 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 
-def export_to_binary(records, output_file):
+def flatten_records(records) -> pd.DataFrame:
     mz = []
     intensity = []
+    ms_levels = []
+    retention_times = []
 
     current_index = None
     current_mz_group = []
     current_intensity_group = []
+    current_ms_level = None
+    current_retention_time = None
 
     for record in tqdm(records, desc='Flattening records'):
         index, retention_time, mz_value, intensity_value, ms_level = record
@@ -22,10 +26,14 @@ def export_to_binary(records, output_file):
             if current_index is not None:
                 mz.append(np.array(current_mz_group))
                 intensity.append(np.array(current_intensity_group))
+                ms_levels.append(current_ms_level)
+                retention_times.append(current_retention_time)
 
             current_index = index
             current_mz_group = []
             current_intensity_group = []
+            current_ms_level = ms_level
+            current_retention_time = retention_time
 
         # Append the current mz and intensity values
         current_mz_group.append(mz_value)
@@ -35,8 +43,22 @@ def export_to_binary(records, output_file):
     if current_mz_group:
         mz.append(np.array(current_mz_group))
         intensity.append(np.array(current_intensity_group))
+        ms_levels.append(current_ms_level)
+        retention_times.append(current_retention_time)
 
+    return pd.DataFrame({'mz': mz, 'int': intensity, 'ms_level': ms_levels, 'retention_time': retention_times})
+
+
+def export_to_binary(records, output_file):
+    df = flatten_records(records)
+    mz = df['mz'].to_list()
+    intensity = df['int'].to_list()
     write_binary_file(output_file, mz, intensity)
+
+
+def export_to_npy(records, output_file):
+    df = flatten_records(records)
+    np.save(output_file, df)
 
 
 def export_to_parquet(records, output_path, compression=None):
@@ -63,6 +85,11 @@ def export_to_parquet(records, output_path, compression=None):
 def import_from_binary(file_path):
     mz_values, intensity_values = read_binary_file(file_path)
     df = pd.DataFrame({'mz': mz_values, 'int': intensity_values})
+    return df
+
+
+def import_from_npy(file_path):
+    df = pd.DataFrame(np.load(file_path, allow_pickle=True), columns=['mz', 'int', 'ms_level', 'retention_time'])
     return df
 
 

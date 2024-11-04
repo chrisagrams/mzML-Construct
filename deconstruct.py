@@ -4,7 +4,7 @@ from tqdm import tqdm
 from lxml import etree
 from utils.mzml_utils import *
 from utils.binary_utils import decode_binary
-from utils.file_utils import export_to_parquet, export_to_binary
+from utils.file_utils import export_to_parquet, export_to_binary, export_to_npy
 
 
 def parse_arguments():
@@ -17,6 +17,8 @@ def parse_arguments():
                         help="Path to the output Parquet file (default: output directory with input file name and .parquet extension)")
     parser.add_argument("-b", "--output_binary",
                         help="Path to the output binary file (default: output directory with input file name and .bin extension)")
+    parser.add_argument("-n", "--output_npy",
+                        help="Path to the output NPY file (default: output directory with input file name and .npy extension)")
     return parser.parse_args()
 
 
@@ -34,6 +36,7 @@ if __name__ == "__main__":
     output_xml = args.output_xml or change_extension(source, '.xml', output_dir)
     output_parquet = args.output_parquet or change_extension(source, '.parquet', output_dir)
     output_binary = args.output_binary or change_extension(source, '.bin', output_dir)
+    output_npy = args.output_npy or change_extension(source, '.npy', output_dir)
 
     tree = etree.parse(source)
     root = tree.getroot()
@@ -74,3 +77,5 @@ if __name__ == "__main__":
         export_to_parquet(records, output_parquet)
     if output_binary:
         export_to_binary(records, output_binary)
+    if output_npy:
+        export_to_npy(records, output_npy)

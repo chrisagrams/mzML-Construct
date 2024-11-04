@@ -4,7 +4,7 @@ from tqdm import tqdm
 import numpy as np
 from utils.mzml_utils import *
 from utils.binary_utils import encode_binary
-from utils.file_utils import import_from_binary, import_from_parquet
+from utils.file_utils import import_from_binary, import_from_parquet, import_from_npy
 
 
 def parse_arguments():
@@ -32,8 +32,10 @@ if __name__ == "__main__":
         df = import_from_parquet(source_data)
     elif source_data.endswith('.bin'):
         df = import_from_binary(source_data)
+    elif source_data.endswith('.npy'):
+        df = import_from_npy(source_data)
     else:
-        raise ValueError("The data file must be either a Parquet (.parquet) or binary (.bin) file")
+        raise ValueError("The data file must be either a Parquet (.parquet), NPY (.npy), or binary (.bin) file")
 
     # Process each spectrum in the XML
     for spectrum in tqdm(root.findall(f'.//{{{namespace}}}spectrum'), desc='Constructing mzML'):
