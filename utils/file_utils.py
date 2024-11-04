@@ -4,19 +4,22 @@ import struct
 from tqdm import tqdm
 import pyarrow as pa
 import pyarrow.parquet as pq
+from typing import List, Tuple, Optional
 
 
-def flatten_records(records) -> pd.DataFrame:
-    mz = []
-    intensity = []
-    ms_levels = []
-    retention_times = []
+def flatten_records(
+    records: List[Tuple[int, float, float, float, int]]
+) -> pd.DataFrame:
+    mz: List[np.ndarray] = []
+    intensity: List[np.ndarray] = []
+    ms_levels: List[int] = []
+    retention_times: List[float] = []
 
-    current_index = None
-    current_mz_group = []
-    current_intensity_group = []
-    current_ms_level = None
-    current_retention_time = None
+    current_index: Optional[int] = None
+    current_mz_group: List[float] = []
+    current_intensity_group: List[float] = []
+    current_ms_level: Optional[int] = None
+    current_retention_time: Optional[float] = None
 
     for record in tqdm(records, desc="Flattening records"):
         index, retention_time, mz_value, intensity_value, ms_level = record
@@ -56,19 +59,27 @@ def flatten_records(records) -> pd.DataFrame:
     )
 
 
-def export_to_binary(records, output_file):
+def export_to_binary(
+    records: List[Tuple[int, float, float, float, int]], output_file: str
+) -> None:
     df = flatten_records(records)
     mz = df["mz"].to_list()
     intensity = df["int"].to_list()
     write_binary_file(output_file, mz, intensity)
 
 
-def export_to_npy(records, output_file):
+def export_to_npy(
+    records: List[Tuple[int, float, float, float, int]], output_file: str
+) -> None:
     df = flatten_records(records)
     np.save(output_file, df)
 
 
-def export_to_parquet(records, output_path, compression=None):
+def export_to_parquet(
+    records: List[Tuple[int, float, float, float, int]],
+    output_path: str,
+    compression: Optional[str] = None,
+) -> None:
     schema = pa.schema(
         [
             ("spec_no", pa.int32()),
@@ -94,13 +105,13 @@ def export_to_parquet(records, output_path, compression=None):
     pq.write_table(table, output_path, compression=compression)
 
 
-def import_from_binary(file_path):
+def import_from_binary(file_path: str) -> pd.DataFrame:
     mz_values, intensity_values = read_binary_file(file_path)
     df = pd.DataFrame({"mz": mz_values, "int": intensity_values})
     return df
 
 
-def import_from_npy(file_path):
+def import_from_npy(file_path: str) -> pd.DataFrame:
     df = pd.DataFrame(
         np.load(file_path, allow_pickle=True),
         columns=["mz", "int", "ms_level", "retention_time"],
@@ -108,7 +119,7 @@ def import_from_npy(file_path):
     return df
 
 
-def import_from_parquet(parquet_file):
+def import_from_parquet(parquet_file: str) -> pd.DataFrame:
     df = pd.read_parquet(parquet_file)
 
     consolidated_df = (
@@ -120,14 +131,16 @@ def import_from_parquet(parquet_file):
     return consolidated_df
 
 
-def write_binary_file(file_path, mz_values, intensity_values):
+def write_binary_file(
+    file_path: str, mz_values: List[np.ndarray], intensity_values: List[np.ndarray]
+) -> None:
     with open(file_path, "wb") as f:
         # Write header
         f.write(b"\x00" * 512)
 
         # Keep track of offsets
         mz_offset = f.tell()
-        lengths = []
+        lengths: List[int] = []
 
         # Write m/z data type in reserved header
         f.seek(24)
@@ -171,7 +184,7 @@ def write_binary_file(file_path, mz_values, intensity_values):
         f.write(struct.pack("Q", lengths_offset))
 
 
-def read_binary_file(file_path):
+def read_binary_file(file_path: str) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     with open(file_path, "rb") as f:
         # Read offsets from the reserved 512 bytes
         mz_offset = struct.unpack("Q", f.read(8))[0]
@@ -191,8 +204,8 @@ def read_binary_file(file_path):
         f.seek(lengths_offset)
         lengths = np.frombuffer(f.read(), dtype=np.int32)
 
-        mz_values = []
-        intensity_values = []
+        mz_values: List[np.ndarray] = []
+        intensity_values: List[np.ndarray] = []
 
         # Read m/z values
         pos = mz_offset

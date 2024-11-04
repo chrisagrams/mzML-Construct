@@ -7,7 +7,7 @@ from utils.binary_utils import encode_binary
 from utils.file_utils import import_from_binary, import_from_parquet, import_from_npy
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Construct mzML from XML and binary/parquet files."
     )

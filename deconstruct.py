@@ -7,7 +7,7 @@ from utils.binary_utils import decode_binary
 from utils.file_utils import export_to_parquet, export_to_binary, export_to_npy
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Split an mzML file to XML and binary/parquet/NPY file formats"
     )
@@ -28,7 +28,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def change_extension(filepath, new_ext, output_dir):
+def change_extension(filepath: str, new_ext: str, output_dir: str) -> str:
     filename = os.path.basename(filepath)
     name, _ = os.path.splitext(filename)
     return os.path.join(output_dir, name + new_ext)
