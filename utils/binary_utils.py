@@ -4,7 +4,9 @@ import struct
 import numpy as np
 
 
-def decode_binary(text: str, source_format: str, source_compression: bool) -> np.ndarray:
+def decode_binary(
+    text: str, source_format: str, source_compression: bool
+) -> np.ndarray:
     """
     Decodes a base64 encoded binary string into a numpy array.
     :param text: Base64 string from mzML file.
@@ -17,14 +19,14 @@ def decode_binary(text: str, source_format: str, source_compression: bool) -> np
         if source_compression:
             decoded_bytes = zlib.decompress(decoded_bytes)
 
-        if source_format == 'f':
+        if source_format == "f":
             arr_len = len(decoded_bytes) // 4
             dtype = np.float32
-        elif source_format == 'd':
+        elif source_format == "d":
             arr_len = len(decoded_bytes) // 8
             dtype = np.float64
         else:
-            raise NotImplementedError(f'{source_format} is not currently supported')
+            raise NotImplementedError(f"{source_format} is not currently supported")
 
         arr = struct.unpack(source_format * arr_len, decoded_bytes)
         return np.array(arr, dtype=dtype)
@@ -39,20 +41,20 @@ def encode_binary(arr: np.ndarray, target_format: str, target_compression: bool)
     :param target_compression: Source compression flag (True: zlib encoded, False: uncompressed).
     :return: Base64 encoded binary string.
     """
-    if target_format == 'f':
+    if target_format == "f":
         dtype = np.float32
-    elif target_format == 'd':
+    elif target_format == "d":
         dtype = np.float64
     else:
-        raise NotImplementedError(f'{target_format} is not currently supported')
+        raise NotImplementedError(f"{target_format} is not currently supported")
 
     if arr.dtype != dtype:
-        raise ValueError(f'Array dtype must be {dtype}, but got {arr.dtype}')
+        raise ValueError(f"Array dtype must be {dtype}, but got {arr.dtype}")
 
     binary_data = struct.pack(target_format * len(arr), *arr.tolist())
 
     if target_compression:
         binary_data = zlib.compress(binary_data)
 
-    encoded_text = base64.b64encode(binary_data).decode('utf-8')
+    encoded_text = base64.b64encode(binary_data).decode("utf-8")
     return encoded_text
